@@ -174,3 +174,46 @@ class FireworksProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor("fireworks-processor", FireworksProcessor)
+
+class WindChimeProcessor extends AudioWorkletProcessor {
+  constructor(...args) {
+    super(...args)
+    this.port.onmessage = (event) => {
+      this.onmessage(event.data)
+    }
+    this.cwave = periodicWave(3000, 32, 1)
+    this.wwave = periodicWave(2000, 2, 1)
+    this.wwaveFunc = createPeriodicPlayer(this.wwave)
+    this.wvolFunc = createDecayVolume(0.5, 1)
+    this.wvol = 0
+    this.chimes = []
+  }
+  onmessage({ wind, chime }) {
+    if (wind) this.wvol += Math.random()
+    if (chime) {
+      const v = Math.random()
+      const f = 1 + 0.01 * Math.random()
+      this.chimes.push({ t: 0, player: createPeriodicPlayer(this.cwave), vol: 0.2 * v, speed: f })
+      this.chimes.push({ t: 0, player: createPeriodicPlayer(this.cwave), vol: 0.1 * Math.random() * v, speed: 2.3 * f })
+    }
+  }
+  process(_inputs, outputs, _parameters) {
+    const output = outputs[0]
+    const len = output[0].length
+    for (let i = 0; i < len; i++) {
+      const wvol = this.wvolFunc(this.wvol)
+      this.wvol = 0
+      let v = 0.01 * wvol * this.wwaveFunc(1 + 0.2 * wvol)
+      this.chimes = this.chimes.filter(chime => {
+        const t = chime.t += 1 / sampleRate
+        const u = Math.min(t / 0.002, 1)
+        v += (3 * u ** 2 - 2 * u ** 3) * (Math.pow(0.001, t) - 0.001) * chime.vol * chime.player(chime.speed)
+        return chime.t < 1
+      })
+      output.forEach(chan => chan[i] = v)
+    }
+    return true
+  }
+}
+
+registerProcessor("windchime-processor", WindChimeProcessor)
