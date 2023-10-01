@@ -1,9 +1,20 @@
+function createLowPass1(sec) {
+  let a = 0
+  const ex = Math.exp(-1 / sampleRate / sec)
+  const sum2 = 1 / (1 - ex ** 2)
+  const s = Math.sqrt(1 / sum2)
+  return (v) => {
+    a = ex * a + v
+    return a * s
+  }
+}
 
 function createLowPass2(sec) {
   let a = 0
   let b = 0
   const ex = Math.exp(-1 / sampleRate / sec)
-  const s = 4 / Math.sqrt(sampleRate * sec)
+  const sum2 = 1 / (1 - ex ** 2) - 2 / (1 - ex ** 3) + 1 / (1 - ex ** 4)
+  const s = Math.sqrt(1 / sum2)
   return (v) => {
     a = ex * a + v
     b = ex * ex * b + v
@@ -16,9 +27,8 @@ function createLowPass3(sec) {
   let b = 0
   let c = 0
   const ex = Math.exp(-1 / sampleRate / sec)
-  console.log(ex)
-  const s = 4 / Math.sqrt(sampleRate * sec)
-  console.log(s)
+  const sum2 = 1 / (1 - ex ** 2) - 4 / (1 - ex ** 3) + 6 / (1 - ex ** 4) - 4 / (1 - ex ** 5) + 1 / (1 - ex ** 6)
+  const s = Math.sqrt(1 / sum2)
   return (v) => {
     a = ex * a + v
     b = ex * ex * b + v
@@ -26,7 +36,6 @@ function createLowPass3(sec) {
     return (a + c - 2 * b) * s
   }
 }
-
 
 class RandomNoiseProcessor extends AudioWorkletProcessor {
   constructor(...args) {
