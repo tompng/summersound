@@ -74,30 +74,35 @@ function createLowPass3(sec) {
 class RandomNoiseProcessor extends AudioWorkletProcessor {
   constructor(...args) {
     super(...args)
-    this.value = 0
+    this.bang = 1
+    this.crack = 0
     this.port.onmessage = (event) => {
       this.onmessage(event.data)
     }
-    this.f1 = createLowPass3(0.0005)
-    this.f2 = createLowPass3(0.002)
-    this.v1 = createDecayVolume(0.0005, 0.1)
-    this.v2 = createDecayVolume(0.001, 0.3)
+    this.wmiddle = createLowPass3(0.0005)
+    this.wlow = createLowPass3(0.002)
+    this.whigh = createLowPass3(0.0002)
+    this.vbang1 = createDecayVolume(0.0005, 0.1)
+    this.vbang2 = createDecayVolume(0.001, 0.5)
+    this.vcrack = createDecayVolume(0.0005, 0.2)
   }
-  onmessage(value = 0) {
-    this.value += value
+  onmessage({ bang, crack }) {
+    this.bang += bang
+    this.crack += crack
   }
   process(_inputs, outputs, _parameters) {
     const output = outputs[0]
     const len = output[0].length
     for (let i = 0; i < len; i++) {
-      const v1 = this.v1(this.value)
-      const v2 = this.v2(this.value)
-      this.value = 0
+      const bang1 = this.vbang1(this.bang)
+      const bang2 = this.vbang2(this.bang)
+      const crack = this.vcrack(this.crack)
+      this.bang = this.crack = 0
       const v = (
-        0.5 * v1 * this.f1(Math.random() * 2 - 1) +
-        0.4 * v2 * this.f2(Math.random() * 2 - 1)
+        0.5 * bang1 * this.wmiddle(Math.random() * 2 - 1) +
+        0.4 * bang2 * this.wlow(Math.random() * 2 - 1) +
+        0.1 * crack * this.whigh(Math.random() * 2 - 1)
       )
-      // const v = 0.5 * v1 * this.f1(Math.random() * 2 - 1)
       output.forEach(chan => chan[i] = v)
     }
     return true

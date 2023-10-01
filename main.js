@@ -11,7 +11,16 @@ async function start() {
 
   document.body.onclick = () => {
     if (audioContext.state !== 'running') audioContext.resume()
-    randomNoiseNode.port.postMessage(1)
+    randomNoiseNode.port.postMessage({ bang: 1, crack: 0 })
+    let t = 0
+    function f() {
+      t += 0.01
+      const a = t * (1 - t) ** 3
+      for (i=0; i < 4; i++) if (Math.random() < a) randomNoiseNode.port.postMessage({ bang: 0, crack: 4 * a * Math.random() })
+      if (t < 1) setTimeout(f, 8)
+    }
+    setTimeout(f, 500)
+
   }
   
 }
