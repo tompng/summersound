@@ -54,4 +54,14 @@ async function startWindChime() {
   }
 }
 
-startWindChime()
+async function startDemo() {
+  await audioContext.audioWorklet.addModule('sound.js')
+  const node = new AudioWorkletNode(audioContext, 'demo-processor')
+  node.connect(audioContext.destination)
+
+  startDemo.play = (type, decay, volume) => {
+    if (audioContext.state !== 'running') audioContext.resume()
+    node.port.postMessage(type, decay, volume)
+  }
+}
+

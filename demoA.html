@@ -1,0 +1,29 @@
+<meta charset="utf-8">
+<script src="main.js"></script>
+<style>
+  button{font-size: 128px;}
+  div{border-top: 1px solid black; padding: 20px;}
+  label{display: inline-block; padding: 8px;}
+</style>
+<a href="index.html">トップへ</a>&nbsp;<a href="demoB.html">次のデモへ</a>
+<div>
+<label><input type="radio" name="wtype" value="sin" checked>sin波</label>
+<label><input type="radio" name="wtype" value="rect" >矩形波</label>
+<label><input type="radio" name="wtype" value="tri" >三角波</label>
+<label><input type="radio" name="wtype" value="white" >ホワイトノイズ</label>
+</div>
+<div>
+<label><input type="radio" name="decay" value="false" checked>一定</label>
+<label><input type="radio" name="decay" value="true" >減衰</label>
+</div>
+<button onclick="playSound()">🔈</button>
+
+<script>
+startDemo()
+function playSound() {
+  var wtype = document.querySelector('input[name="wtype"]:checked').value
+  var decay = document.querySelector('input[name="decay"]:checked').value == 'true'
+  startDemo.play({ type: wtype, decay, volume: 1 })
+
+}
+</script>

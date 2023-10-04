@@ -83,6 +83,20 @@ function createDecayVolume(startup, sec) {
   }
 }
 
+function createMovingAverage(sec) {
+  const length = Math.round(sec * sampleRate)
+  const waves = new Array(length).fill(0)
+  let i = 0
+  let sum = 0
+  const s = 1 / Math.sqrt(length)
+  return (v) => {
+    sum += v - waves[i]
+    waves[i] = v
+    i = (i + 1) % length
+    return sum * s
+  }
+}
+
 function createLowPass1(sec) {
   let a = 0
   const ex = Math.exp(-1 / sampleRate / sec)
@@ -194,7 +208,7 @@ class WindChimeProcessor extends AudioWorkletProcessor {
       const v = Math.random()
       const f = 1 + 0.01 * Math.random()
       this.chimes.push({ t: 0, player: createPeriodicPlayer(this.cwave), vol: 0.2 * v, speed: f })
-      this.chimes.push({ t: 0, player: createPeriodicPlayer(this.cwave), vol: 0.1 * Math.random() * v, speed: 2.3 * f })
+      this.chimes.push({ t: 0, player: createPeriodicPlayer(this.cwave), vol: 0.1 * Math.random() * v, speed: 2 * f })
     }
   }
   process(_inputs, outputs, _parameters) {
@@ -217,3 +231,73 @@ class WindChimeProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor("windchime-processor", WindChimeProcessor)
+
+
+class DemoProcessor extends AudioWorkletProcessor {
+  constructor(...args) {
+    super(...args)
+    this.port.onmessage = (event) => {
+      this.onmessage(event.data)
+    }
+    this.cwave = periodicWave(4000, 32, 1)
+    this.sounds = []
+  }
+  wfuncFromType(wtype) {
+    let t = 0
+    switch(wtype) {
+      case 'sin': return (_) => 0.3 * Math.sin(Math.PI * (t += 1000 * 2 * Math.PI / sampleRate))
+      case 'rect': return (_) => 0.3 * Math.abs(Math.sin(Math.PI * (t += 1000 * 2 * Math.PI / sampleRate)))
+      case 'tri': return (_) => 0.3 * 2 / Math.PI * Math.asin(Math.sin(Math.PI * (t += 1000 * 2 * Math.PI / sampleRate)))
+      case 'white': return (_) => 0.15 * (2 * Math.random() - 1)
+      case 'moving': { const f = createMovingAverage(0.001); return (v) => 0.4 * f(v) }
+      case 'exp': { const f = createLowPass1(0.001); return (v) => 0.4 * f(v) }
+      case 'lowpass': return createLowPass3(0.001)
+      case 'bandpass1': return createBandPass(1000, 4)
+      case 'bandpass2': return createBandPass(1000, 16)
+    }
+    const player1 = createPeriodicPlayer(this.cwave)
+    const player2 = createPeriodicPlayer(this.cwave)
+    const chime1 = (_) => 0.5 * player1(1)
+    const chime2 = (_) => 0.5 * player2(2)
+    const chime12 = (_) => 0.4 * player1(1) + 0.2 * player2(2)
+    if (wtype == 'chime1') return chime1
+    if (wtype == 'chime2') return chime2
+    if (wtype == 'chime12') return chime12
+  }
+  onmessage({ type, decay, volume }) {
+    this.sounds.push({
+      wave: this.wfuncFromType(type),
+      volume,
+      t: 0,
+      decay,
+      duration: decay ? 2 : 1,
+    })
+  }
+  volFuncConst(t) {
+    if (t < 0 || t > 1) return 0
+    t = Math.min(t, 1 - t)
+    const v = t < 0.005 ? t / 0.005 : 1
+    return v * v * (3 - 2 * v)
+  }
+  volFuncDecay(t) {
+    const v = t < 0.005 ? t / 0.005 : 1
+    return v * v * (3 - 2 * v) * (Math.exp(-8 * t) - Math.exp(-8))
+  }
+  process(_inputs, outputs, _parameters) {
+    const output = outputs[0]
+    const len = output[0].length
+    for (let i = 0; i < len; i++) {
+      let v = 0
+      this.sounds = this.sounds.filter(sound => {
+        sound.t += 1 / sampleRate
+        const w = sound.wave(2 * Math.random() - 1)
+        v += sound.volume * w * (sound.decay ? this.volFuncDecay(sound.t / sound.duration) : this.volFuncConst(sound.t / sound.duration))
+        return sound.t < sound.duration
+      })
+      output.forEach(chan => chan[i] = v)
+    }
+    return true
+  }
+}
+
+registerProcessor("demo-processor", DemoProcessor)
