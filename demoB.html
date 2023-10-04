@@ -3,20 +3,28 @@
 <script src="main.js"></script>
 <style>
   button{font-size: 128px;}
-  div{border-top: 1px solid black; padding: 20px;}
+  .formgroup{border-top: 1px solid black; padding: 20px;}
+  label{display: inline-block; padding: 8px;}
 </style>
 <a href="index.html">トップへ</a>&nbsp;<a href="demoA.html">前のデモへ</a>
-<div>
-<label><input type="radio" name="wtype" value="moving" checked>移動平均</label>
-<label><input type="radio" name="wtype" value="exp" >指数移動平均</label>
-<label><input type="radio" name="wtype" value="lowpass" >加重移動平均1</label>
-<label><input type="radio" name="wtype" value="bandpass1" >加重移動平均2</label>
-<label><input type="radio" name="wtype" value="bandpass2" >加重移動平均3</label>
+<br><button class="start" onpointerdown="start()">Click To Start</button>
+<div class="content" style="display:none">
+  <div>
+    <label><input type="radio" name="wtype" value="moving" checked>移動平均</label>
+    <label><input type="radio" name="wtype" value="exp" >指数移動平均</label>
+    <label><input type="radio" name="wtype" value="lowpass" >加重移動平均1</label>
+    <label><input type="radio" name="wtype" value="bandpass1" >加重移動平均2</label>
+    <label><input type="radio" name="wtype" value="bandpass2" >加重移動平均3</label>
+  </div>
+  <button onpointerdown="playSound()">🔈</button>
 </div>
-<button onclick="playSound()">🔈</button>
 
 <script>
-startDemo()
+function start() {
+  startDemo()
+  document.querySelector('.start').remove()
+  document.querySelector('.content').style.display = 'block'
+}
 function playSound() {
   var wtype = document.querySelector('input[name="wtype"]:checked').value
   startDemo.play({ type: wtype, decay: true, volume: 1 })
