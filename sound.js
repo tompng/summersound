@@ -220,7 +220,7 @@ class WindChimeProcessor extends AudioWorkletProcessor {
       let v = 0.01 * wvol * this.wwaveFunc(1 + 0.2 * wvol)
       this.chimes = this.chimes.filter(chime => {
         const t = chime.t += 1 / sampleRate
-        const u = Math.min(t / 0.002, 1)
+        const u = Math.min(t / 0.01, 1)
         v += (3 * u ** 2 - 2 * u ** 3) * (Math.pow(0.001, t) - 0.001) * chime.vol * chime.player(chime.speed)
         return chime.t < 1
       })
