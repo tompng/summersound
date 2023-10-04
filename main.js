@@ -1,7 +1,7 @@
 
 const audioContext = new AudioContext()
 async function startFireworks() {
-  document.body.innerHTML = 'click'
+  document.body.innerHTML = ''
   const emojiAnimate = createEmoji(0)
   await audioContext.audioWorklet.addModule('sound.js')
   const node = new AudioWorkletNode(audioContext, 'fireworks-processor')
@@ -31,7 +31,7 @@ async function startFireworks() {
 }
 
 async function startWindChime() {
-  document.body.innerHTML = 'click'
+  document.body.innerHTML = ''
   const emojiAnimate = createEmoji(1)
   await audioContext.audioWorklet.addModule('sound.js')
   const node = new AudioWorkletNode(audioContext, 'windchime-processor')
